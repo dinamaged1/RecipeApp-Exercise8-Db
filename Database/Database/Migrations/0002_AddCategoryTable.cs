@@ -9,7 +9,8 @@ namespace Database.Migrations
         public override void Up()
         {
             Create.Table("Category")
-                .WithColumn("category_name").AsAnsiString().PrimaryKey()
+                .WithColumn("id").AsString().PrimaryKey()
+                .WithColumn("category_name").AsString()
                 .WithColumn("is_active").AsBoolean().NotNullable().WithDefaultValue(true);
         }
 

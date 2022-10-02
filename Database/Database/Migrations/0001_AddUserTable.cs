@@ -9,7 +9,7 @@ namespace Database.Migrations
         public override void Up()
         {
             Create.Table("User")
-                .WithColumn("id").AsGuid().PrimaryKey()
+                .WithColumn("id").AsString().PrimaryKey()
                 .WithColumn("username").AsString()
                 .WithColumn("password_hash").AsString()
                 .WithColumn("password_salt").AsString()

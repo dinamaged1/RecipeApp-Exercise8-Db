@@ -9,9 +9,9 @@ namespace Database.Migrations
         public override void Up()
         {
             Create.Table("RecipeCategories")
-                    .WithColumn("id").AsGuid().PrimaryKey()
-                    .WithColumn("recipe_id").AsGuid().NotNullable().ForeignKey("Recipe", "id")
-                    .WithColumn("category").AsString(1000).NotNullable()
+                    .WithColumn("id").AsString().PrimaryKey()
+                    .WithColumn("recipe_id").AsString().NotNullable().ForeignKey("Recipe", "id")
+                    .WithColumn("category_id").AsString().NotNullable().ForeignKey("Category","id")
                     .WithColumn("is_active").AsBoolean().NotNullable().WithDefaultValue(true);
         }
 

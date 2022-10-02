@@ -9,7 +9,7 @@ namespace Database.Migrations
         public override void Up()
         {
             Create.Table("Recipe")
-                .WithColumn("id").AsGuid().PrimaryKey()
+                .WithColumn("id").AsString().PrimaryKey()
                 .WithColumn("title").AsString()
                 .WithColumn("image_path").AsString()
                 .WithColumn("is_active").AsBoolean().NotNullable().WithDefaultValue(true);
