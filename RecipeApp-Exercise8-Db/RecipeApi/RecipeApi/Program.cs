@@ -104,21 +104,6 @@ app.UseHttpsRedirection();
 List<User>? savedUsers = new();
 List<Recipe>? savedRecipes = new();
 List<string>? savedCategories = new();
-try
-{
-    string userJson = await ReadJsonFile("user");
-    string recipeJson = await ReadJsonFile("recipe");
-    string categoryJson = await ReadJsonFile("category");
-
-    savedRecipes = JsonSerializer.Deserialize<List<Recipe>>(recipeJson);
-    savedCategories = JsonSerializer.Deserialize<List<string>>(categoryJson);
-    savedUsers = JsonSerializer.Deserialize<List<User>>(userJson);
-}
-catch (Exception ex)
-{
-    Console.WriteLine(ex.Message);
-    return;
-}
 
 //Create list of recipes and list of categories
 List<User> usersList = new List<User>();
@@ -128,26 +113,33 @@ List<string> categoryList = new List<string>();
 // User register
 app.MapPost("/register", async ([FromBody] UserDto newUser) =>
 {
-    if (newUser.UserPassword.IsNullOrEmpty())
+    using (var adapter = new DataAccessAdapter(connectionString))
     {
-        return Results.BadRequest("Invalid password!");
-    }
-    else if (newUser.Username.IsNullOrEmpty() || usersList.Exists(x => x.Username == newUser.Username))
-    {
-        return Results.BadRequest("Invalid user name");
-    }
+        var metaData = new LinqMetaData(adapter);
+        var users = metaData.User.Where(x => x.IsActive == true);
+        var usernames = users.Select(x => x.Username);
 
-    CreatePasswordHash(newUser.UserPassword, out byte[] passwordHash, out byte[] passwordSalt);
-    User addedUser = new User();
-    addedUser.Id = new Guid().ToString();
-    addedUser.Username = newUser.Username;
-    addedUser.PasswordHash = passwordHash;
-    addedUser.PasswordSalt = passwordSalt;
+        if (newUser.UserPassword.IsNullOrEmpty())
+        {
+            return Results.BadRequest("Invalid password!");
+        }
+        else if (newUser.Username.IsNullOrEmpty() || usersList.Exists(x => x.Username == newUser.Username))
+        {
+            return Results.BadRequest("Invalid user name");
+        }
 
-    usersList.Add(addedUser);
-    await SaveUserToJson();
-    var stringToken = CreateToken(newUser.Username);
-    return Results.Ok(stringToken);
+        CreatePasswordHash(newUser.UserPassword, out byte[] passwordHash, out byte[] passwordSalt);
+        User addedUser = new User();
+        addedUser.Id = new Guid().ToString();
+        addedUser.Username = newUser.Username;
+        addedUser.PasswordHash = passwordHash;
+        addedUser.PasswordSalt = passwordSalt;
+
+        usersList.Add(addedUser);
+        //await SaveUserToJson();
+        var stringToken = CreateToken(newUser.Username);
+        return Results.Ok(stringToken);
+    }
 });
 
 // User login
@@ -174,7 +166,7 @@ app.MapPost("/login", async ([FromBody] UserDto enteredUser, Microsoft.AspNetCor
     SetRefreshToken(refreshToken, token, userData, response);
 
     userData.RefreshToken = refreshToken.Token.ToString();
-    await SaveUserToJson();
+    //await SaveUserToJson();
 
     List<string> tokens = new List<string>()
     {
@@ -210,7 +202,7 @@ app.MapPost("/refreshToken", async ([FromBody] string username, Microsoft.AspNet
     SetRefreshToken(newRefreshToken, token, specifiedUser, response);
 
     specifiedUser.RefreshToken = newRefreshToken.Token.ToString();
-    await SaveUserToJson();
+    //await SaveUserToJson();
 
     List<string> tokens = new List<string>()
     {
@@ -247,7 +239,7 @@ app.MapGet("/recipe/{id}", [Authorize] (Guid id) =>
 app.MapPost("/recipe", [Authorize] async ([FromBody] Recipe newRecipe) =>
 {
     recipesList.Add(newRecipe);
-    await SaveRecipeToJson();
+    //await SaveRecipeToJson();
     return Results.Ok(recipesList);
 });
 
@@ -258,7 +250,7 @@ app.MapPut("/recipe/{id}", [Authorize] async (Guid id, [FromBody] Recipe newReci
     if (selectedRecipeIndex != -1)
     {
         recipesList[selectedRecipeIndex] = newRecipeData;
-        await SaveRecipeToJson();
+        //await SaveRecipeToJson();
         return Results.Ok(recipesList);
     }
     else
@@ -274,7 +266,7 @@ app.MapDelete("/recipe/{id}", [Authorize] async (Guid id) =>
     if (selectedRecipeIndex != -1)
     {
         recipesList.Remove(recipesList[selectedRecipeIndex]);
-        await SaveRecipeToJson();
+        //await SaveRecipeToJson();
         return Results.Ok();
     }
     else
@@ -370,7 +362,7 @@ app.MapDelete("category/{name}", async (string name) =>
         var categories = categoryList.Select(x => x.CategoryName).ToList();
         var selectedCategory = categoryList.FirstOrDefault(x => x.CategoryName == name);
 
-        if (categories.Contains(name) && selectedCategory!=null)
+        if (categories.Contains(name) && selectedCategory != null)
         {
             CategoryEntity deletedCategoryEntity = new CategoryEntity()
             {
@@ -383,7 +375,7 @@ app.MapDelete("category/{name}", async (string name) =>
             categories.Remove(name);
 
             var deletedRecipeCategoryList = new EntityCollection<RecipeCategoryEntity>();
-            foreach(var deletedRecipeCategory in metaData.RecipeCategory.Where(x=> x.IsActive==true && x.CategoryId== selectedCategory.Id))
+            foreach (var deletedRecipeCategory in metaData.RecipeCategory.Where(x => x.IsActive == true && x.CategoryId == selectedCategory.Id))
             {
                 deletedRecipeCategory.IsActive = false;
                 deletedRecipeCategoryList.Add(deletedRecipeCategory);
@@ -470,28 +462,4 @@ bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
         var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         return computedHash.SequenceEqual(passwordHash);
     }
-}
-
-async Task<string> ReadJsonFile(string fileName) =>
-await File.ReadAllTextAsync($"{fileName}.json");
-
-async Task WriteJsonFile(string fileName, string fileData) =>
-await File.WriteAllTextAsync($"{fileName}.json", fileData);
-
-async Task SaveUserToJson()
-{
-    string jsonString = JsonSerializer.Serialize(usersList);
-    await WriteJsonFile("user", jsonString);
-}
-
-async Task SaveRecipeToJson()
-{
-    string jsonString = JsonSerializer.Serialize(recipesList);
-    await WriteJsonFile("recipe", jsonString);
-}
-
-async Task SaveCategoryToJson()
-{
-    string jsonString = JsonSerializer.Serialize(categoryList);
-    await WriteJsonFile("category", jsonString);
 }
