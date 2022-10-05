@@ -117,26 +117,30 @@ app.MapPost("/register", async ([FromBody] UserDto newUser) =>
     {
         var metaData = new LinqMetaData(adapter);
         var users = metaData.User.Where(x => x.IsActive == true);
-        var usernames = users.Select(x => x.Username);
+        var usernames = users.Select(x => x.Username).ToList();
 
         if (newUser.UserPassword.IsNullOrEmpty())
         {
             return Results.BadRequest("Invalid password!");
         }
-        else if (newUser.Username.IsNullOrEmpty() || usersList.Exists(x => x.Username == newUser.Username))
+        else if (newUser.Username.IsNullOrEmpty() || usernames.Contains(newUser.Username))
         {
-            return Results.BadRequest("Invalid user name");
+            return Results.BadRequest("Invalid username");
         }
 
         CreatePasswordHash(newUser.UserPassword, out byte[] passwordHash, out byte[] passwordSalt);
-        User addedUser = new User();
-        addedUser.Id = new Guid().ToString();
-        addedUser.Username = newUser.Username;
-        addedUser.PasswordHash = passwordHash;
-        addedUser.PasswordSalt = passwordSalt;
 
-        usersList.Add(addedUser);
-        //await SaveUserToJson();
+        UserEntity newUserEntity = new UserEntity()
+        {
+            Id = Guid.NewGuid().ToString(),
+            Username = newUser.Username,
+            PasswordHash = Convert.ToBase64String(passwordHash),
+            PasswordSalt = Convert.ToBase64String(passwordSalt),
+            IsActive = true,
+        };
+
+        await adapter.SaveEntityAsync(newUserEntity);
+
         var stringToken = CreateToken(newUser.Username);
         return Results.Ok(stringToken);
     }
@@ -145,80 +149,127 @@ app.MapPost("/register", async ([FromBody] UserDto newUser) =>
 // User login
 app.MapPost("/login", async ([FromBody] UserDto enteredUser, Microsoft.AspNetCore.Http.HttpResponse response) =>
 {
-    if (!usersList.Exists(x => x.Username == enteredUser.Username))
+    using (var adapter = new DataAccessAdapter(connectionString))
     {
-        Results.Text("User not found");
-        return Results.NotFound("User not found");
+        var metaData = new LinqMetaData(adapter);
+        var users = metaData.User.Where(x => x.IsActive == true);
+        var usernames = users.Select(x => x.Username).ToList();
+        if (!usernames.Contains(enteredUser.Username))
+        {
+            Results.Text("User not found");
+            return Results.NotFound("User not found");
+        }
+        else if (enteredUser.Username.IsNullOrEmpty())
+        {
+            return Results.BadRequest("you entered empty user name!");
+        }
+
+        var userData = users.FirstOrDefault((x) => x.Username == enteredUser.Username);
+        User loggedUser = new User();
+
+        if (!VerifyPassword(enteredUser.UserPassword, System.Convert.FromBase64String(userData.PasswordHash), System.Convert.FromBase64String(userData.PasswordSalt)))
+        {
+            return Results.BadRequest("Password incorrect");
+        }
+
+        var token = CreateToken(enteredUser.Username);
+
+        var refreshToken = GenerateRefreshToken();
+        SetRefreshToken(refreshToken, token, loggedUser, response);
+
+        userData.RefreshToken = refreshToken.Token.ToString();
+        //await SaveUserToJson();
+
+        List<string> tokens = new List<string>()
+        {
+            token,
+            refreshToken.Token.ToString()
+        };
+
+        UserEntity loggedUserEntity = new UserEntity()
+        {
+            Id = userData.Id,
+            Username = userData.Username,
+            PasswordHash = userData.PasswordHash,
+            PasswordSalt = userData.PasswordSalt,
+            RefreshToken = refreshToken.Token.ToString(),
+            TokenCreated = loggedUser.TokenCreated,
+            TokenExpires = loggedUser.TokenExpires,
+            IsNew = false,
+        };
+
+        await adapter.SaveEntityAsync(loggedUserEntity);
+
+        return Results.Ok(tokens);
     }
-    else if (enteredUser.Username.IsNullOrEmpty())
-    {
-        return Results.BadRequest("you entered empty user name!");
-    }
-    User? userData = usersList.FirstOrDefault((x) => x.Username == enteredUser.Username);
-    if (!VerifyPassword(enteredUser.UserPassword, userData.PasswordHash, userData.PasswordSalt))
-    {
-        return Results.BadRequest("Password incorrect");
-    }
-
-    var token = CreateToken(enteredUser.Username);
-
-    var refreshToken = GenerateRefreshToken();
-    SetRefreshToken(refreshToken, token, userData, response);
-
-    userData.RefreshToken = refreshToken.Token.ToString();
-    //await SaveUserToJson();
-
-    List<string> tokens = new List<string>()
-    {
-        token,
-        refreshToken.Token.ToString()
-    };
-    return Results.Ok(tokens);
 });
 
 // Refresh token
 app.MapPost("/refreshToken", async ([FromBody] string username, Microsoft.AspNetCore.Http.HttpRequest request, Microsoft.AspNetCore.Http.HttpResponse response) =>
 {
-    User? specifiedUser = new User();
-    var refreshToken = request.Cookies["refreshToken"];
-    if (!usersList.IsNullOrEmpty() && !username.IsNullOrEmpty() && usersList.Exists(x => x.Username == username))
+    using (var adapter = new DataAccessAdapter(connectionString))
     {
-        specifiedUser = usersList.Find(x => x.Username == username);
-    }
-    else
-    {
-        return Results.BadRequest();
-    }
-    if (!specifiedUser.RefreshToken.Equals(refreshToken))
-    {
-        return Results.Json("Invalid Refresh Token.", statusCode: 401);
-    }
-    else if (specifiedUser.TokenExpires < DateTime.Now)
-    {
-        return Results.Json("Token Expired.", statusCode: 401);
-    }
-    string token = CreateToken(username);
-    var newRefreshToken = GenerateRefreshToken();
-    SetRefreshToken(newRefreshToken, token, specifiedUser, response);
+        var metaData = new LinqMetaData(adapter);
+        var users = metaData.User.Where(x => x.IsActive == true);
+        var usernames = users.Select(x => x.Username).ToList();
+        UserEntity specifiedUser = new UserEntity();
+        var refreshToken = request.Cookies["refreshToken"];
+        if (!username.IsNullOrEmpty() && !users.IsNullOrEmpty() && usernames.Contains(username))
+        {
+            specifiedUser = users.FirstOrDefault(x => x.Username == username);
+        }
+        else
+        {
+            return Results.BadRequest();
+        }
+        if (!specifiedUser.RefreshToken.Equals(refreshToken))
+        {
+            return Results.Json("Invalid Refresh Token.", statusCode: 401);
+        }
+        else if (specifiedUser.TokenExpires < DateTime.Now)
+        {
+            return Results.Json("Token Expired.", statusCode: 401);
+        }
+        User loggedUser = new User();
+        string token = CreateToken(username);
+        var newRefreshToken = GenerateRefreshToken();
+        SetRefreshToken(newRefreshToken, token, loggedUser, response);
 
-    specifiedUser.RefreshToken = newRefreshToken.Token.ToString();
-    //await SaveUserToJson();
+        List<string> tokens = new List<string>()
+        {
+            token,
+            newRefreshToken.Token.ToString()
+        };
 
-    List<string> tokens = new List<string>()
-    {
-        token,
-        newRefreshToken.Token.ToString()
-    };
-    return Results.Ok(tokens);
+        UserEntity loggedUserEntity = new UserEntity()
+        {
+            Id = specifiedUser.Id,
+            Username = specifiedUser.Username,
+            PasswordHash = specifiedUser.PasswordHash,
+            PasswordSalt = specifiedUser.PasswordSalt,
+            RefreshToken = newRefreshToken.Token.ToString(),
+            TokenCreated = loggedUser.TokenCreated,
+            TokenExpires = loggedUser.TokenExpires,
+            IsNew = false,
+        };
+
+        await adapter.SaveEntityAsync(loggedUserEntity);
+        return Results.Ok(tokens);
+    }
 });
 
 //Get all recipes
 app.MapGet("/recipes", [Authorize] () =>
 {
-    if (recipesList != null)
-        return Results.Ok(recipesList);
-    else
-        return Results.NoContent();
+    using (var adapter = new DataAccessAdapter(connectionString))
+    {
+        var metaData = new LinqMetaData(adapter);
+        var recipes = metaData.Recipe.Where(x => x.IsActive == true);
+        if (recipesList != null)
+            return Results.Ok(recipesList);
+        else
+            return Results.NoContent();
+    }
 }).WithName("GetRecipes");
 
 //Get specific  recipe
