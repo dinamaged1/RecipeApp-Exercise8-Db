@@ -296,16 +296,29 @@ app.MapGet("/recipes", async () =>
 }).WithName("GetRecipes");
 
 //Get specific  recipe
-app.MapGet("/recipe/{id}", [Authorize] (string id) =>
+app.MapGet("/recipe/{id}", async (string id) =>
 {
-    var selectedRecipeIndex = recipesList.FindIndex(x => x.Id == id);
-    if (selectedRecipeIndex != -1)
+    using (var adapter = new DataAccessAdapter(connectionString))
     {
-        return Results.Ok(recipesList[selectedRecipeIndex]);
-    }
-    else
-    {
-        return Results.NotFound();
+        var metaData = new LinqMetaData(adapter);
+        var selectedRecipe = metaData.Recipe.FirstOrDefault(x => x.IsActive && x.Id == id).ProjectToRecipeView();
+        Recipe selectedRecipeModel = new Recipe()
+        {
+            Id = id,
+            Title = selectedRecipe.Title,
+            Imagepath = selectedRecipe.ImagePath,
+            Ingredients = selectedRecipe.RecipeIngredients.Where(y => y.IsActive).Select(y => y.Ingredient).ToList(),
+            Instructions = selectedRecipe.RecipeInstructions.Where(y => y.IsActive).Select(y => y.Instruction).ToList(),
+            Categories = selectedRecipe.RecipeCategories.Where(y => y.IsActive).Select(y => y.Category.CategoryName).ToList()
+        };
+        if (selectedRecipe != null)
+        {
+            return Results.Ok(selectedRecipeModel);
+        }
+        else
+        {
+            return Results.NotFound();
+        }
     }
 });
 
