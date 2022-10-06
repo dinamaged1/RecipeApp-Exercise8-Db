@@ -281,11 +281,11 @@ app.MapGet("/recipes", async () =>
         List<Recipe> recipesList = recipes.Select(x => new Recipe
         {
             Id = x.Id,
-            Title= x.Title,
-            Imagepath=x.ImagePath,
-            Ingredients=x.RecipeIngredients.Where(y=>y.IsActive).Select(y=> y.Ingredient).ToList(),
+            Title = x.Title,
+            Imagepath = x.ImagePath,
+            Ingredients = x.RecipeIngredients.Where(y => y.IsActive).Select(y => y.Ingredient).ToList(),
             Instructions = x.RecipeInstructions.Where(y => y.IsActive).Select(y => y.Instruction).ToList(),
-            Categories=x.RecipeCategories.Where(y=>y.IsActive).Select(y=>y.Category.CategoryName).ToList()
+            Categories = x.RecipeCategories.Where(y => y.IsActive).Select(y => y.Category.CategoryName).ToList()
         }).ToList();
 
         if (recipesList != null)
@@ -296,7 +296,7 @@ app.MapGet("/recipes", async () =>
 }).WithName("GetRecipes");
 
 //Get specific  recipe
-app.MapGet("/recipe/{id}",(string id) =>
+app.MapGet("/recipe/{id}", (string id) =>
 {
     using (var adapter = new DataAccessAdapter(connectionString))
     {
@@ -346,7 +346,7 @@ app.MapPost("/recipe", async ([FromBody] Recipe newRecipe) =>
         RecipeInstructionEntity recipeInstructionEntity = new RecipeInstructionEntity();
         RecipeCategoryEntity recipeCategoryEntity = new RecipeCategoryEntity();
 
-        foreach(var ingredient in newRecipe.Ingredients)
+        foreach (var ingredient in newRecipe.Ingredients)
         {
             recipeIngredientEntity = new RecipeIngredientEntity()
             {
@@ -406,6 +406,7 @@ app.MapPost("/recipe", async ([FromBody] Recipe newRecipe) =>
 //Edit recipe
 app.MapPut("/recipe/{id}", [Authorize] async (string id, [FromBody] Recipe newRecipeData) =>
 {
+
     var selectedRecipeIndex = recipesList.FindIndex(x => x.Id == id);
     if (selectedRecipeIndex != -1)
     {
@@ -420,18 +421,24 @@ app.MapPut("/recipe/{id}", [Authorize] async (string id, [FromBody] Recipe newRe
 });
 
 //Remove recipe
-app.MapDelete("/recipe/{id}", [Authorize] async (string id) =>
+app.MapDelete("/recipe/{id}", async (string id) =>
 {
-    var selectedRecipeIndex = recipesList.FindIndex(x => x.Id == id);
-    if (selectedRecipeIndex != -1)
+    using (var adapter = new DataAccessAdapter(connectionString))
     {
-        recipesList.Remove(recipesList[selectedRecipeIndex]);
-        //await SaveRecipeToJson();
-        return Results.Ok();
-    }
-    else
-    {
-        return Results.NotFound();
+        var metaData = new LinqMetaData(adapter);
+        var selectedRecipe = metaData.Recipe.FirstOrDefault(x => x.IsActive && x.Id == id).ProjectToRecipeView();
+
+        if (selectedRecipe != null)
+        {
+            RecipeEntity deletedRecipeEntity = new RecipeEntity() { Id = id };
+            await adapter.DeleteEntityAsync(deletedRecipeEntity);
+
+            return Results.Ok();
+        }
+        else
+        {
+            return Results.NotFound();
+        }
     }
 });
 
