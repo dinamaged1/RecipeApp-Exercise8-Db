@@ -1,25 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
-using System;
+using System.Text;
+using Newtonsoft;
+
+using RecipeApi.Models;
+using Microsoft.OpenApi.Models;
 using System.Security.Cryptography;
 using System.Security.Claims;
-using System.Text;
+using Swashbuckle.AspNetCore.Filters;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
-using RecipeApi.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Filters;
-using Microsoft.AspNetCore.Authorization;
+
 using SD.LLBLGen.Pro.DQE.PostgreSql;
 using SD.LLBLGen.Pro.LinqSupportClasses;
 using SD.LLBLGen.Pro.ORMSupportClasses;
 using LLBLGen.Linq.Prefetch;
+
+using RecipeDB.Linq;
 using RecipeDB.DatabaseSpecific;
 using RecipeDB.EntityClasses;
 using RecipeDB.HelperClasses;
-using RecipeDB.FactoryClasses;
-using RecipeDB.Linq;
+using RecipeDto.Persistence;
+using RecipeDto.DtoClasses;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +63,12 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAuthorization();
 
+builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+builder.Services.AddControllers().AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -76,6 +86,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 RuntimeConfiguration.ConfigureDQE<PostgreSqlDQEConfiguration>(c => c.AddDbProviderFactory(typeof(Npgsql.NpgsqlFactory)));
+
+
 
 var app = builder.Build();
 
@@ -259,12 +271,23 @@ app.MapPost("/refreshToken", async ([FromBody] string username, Microsoft.AspNet
 });
 
 //Get all recipes
-app.MapGet("/recipes", [Authorize] () =>
+app.MapGet("/recipes", async () =>
 {
+    RuntimeConfiguration.ConfigureDQE<PostgreSqlDQEConfiguration>(c => c.AddDbProviderFactory(typeof(Npgsql.NpgsqlFactory)));
     using (var adapter = new DataAccessAdapter(connectionString))
     {
         var metaData = new LinqMetaData(adapter);
-        var recipes = metaData.Recipe.Where(x => x.IsActive == true);
+        var recipes = await metaData.Recipe.Where(p => p.IsActive).ProjectToRecipeView().ToListAsync();
+        List<Recipe> recipesList = recipes.Select(x => new Recipe
+        {
+            Id = x.Id,
+            Title= x.Title,
+            Imagepath=x.ImagePath,
+            Ingredients=x.RecipeIngredients.Where(y=>y.IsActive).Select(y=> y.Ingredient).ToList(),
+            Instructions = x.RecipeInstructions.Where(y => y.IsActive).Select(y => y.Instruction).ToList(),
+            Categories=x.RecipeCategories.Where(y=>y.IsActive).Select(y=>y.Category.CategoryName).ToList()
+        }).ToList();
+
         if (recipesList != null)
             return Results.Ok(recipesList);
         else
@@ -273,7 +296,7 @@ app.MapGet("/recipes", [Authorize] () =>
 }).WithName("GetRecipes");
 
 //Get specific  recipe
-app.MapGet("/recipe/{id}", [Authorize] (Guid id) =>
+app.MapGet("/recipe/{id}", [Authorize] (string id) =>
 {
     var selectedRecipeIndex = recipesList.FindIndex(x => x.Id == id);
     if (selectedRecipeIndex != -1)
@@ -295,7 +318,7 @@ app.MapPost("/recipe", [Authorize] async ([FromBody] Recipe newRecipe) =>
 });
 
 //Edit recipe
-app.MapPut("/recipe/{id}", [Authorize] async (Guid id, [FromBody] Recipe newRecipeData) =>
+app.MapPut("/recipe/{id}", [Authorize] async (string id, [FromBody] Recipe newRecipeData) =>
 {
     var selectedRecipeIndex = recipesList.FindIndex(x => x.Id == id);
     if (selectedRecipeIndex != -1)
@@ -311,7 +334,7 @@ app.MapPut("/recipe/{id}", [Authorize] async (Guid id, [FromBody] Recipe newReci
 });
 
 //Remove recipe
-app.MapDelete("/recipe/{id}", [Authorize] async (Guid id) =>
+app.MapDelete("/recipe/{id}", [Authorize] async (string id) =>
 {
     var selectedRecipeIndex = recipesList.FindIndex(x => x.Id == id);
     if (selectedRecipeIndex != -1)

@@ -20,18 +20,16 @@ namespace RecipeDB.EntityClasses
 {
 	// __LLBLGENPRO_USER_CODE_REGION_START AdditionalNamespaces
 	// __LLBLGENPRO_USER_CODE_REGION_END
-
 	/// <summary>Entity class which represents the entity 'RecipeIngredient'.<br/><br/></summary>
 	[Serializable]
 	public partial class RecipeIngredientEntity : CommonEntityBase
 		// __LLBLGENPRO_USER_CODE_REGION_START AdditionalInterfaces
-		// __LLBLGENPRO_USER_CODE_REGION_END
-	
+		// __LLBLGENPRO_USER_CODE_REGION_END	
 	{
 		private RecipeEntity _recipe;
+
 		// __LLBLGENPRO_USER_CODE_REGION_START PrivateMembers
 		// __LLBLGENPRO_USER_CODE_REGION_END
-
 		private static RecipeIngredientEntityStaticMetaData _staticMetaData = new RecipeIngredientEntityStaticMetaData();
 		private static RecipeIngredientRelations _relationsFactory = new RecipeIngredientRelations();
 
@@ -114,7 +112,6 @@ namespace RecipeDB.EntityClasses
 			PerformDependencyInjection();
 			// __LLBLGENPRO_USER_CODE_REGION_START InitClassMembers
 			// __LLBLGENPRO_USER_CODE_REGION_END
-
 			OnInitClassMembersComplete();
 		}
 
@@ -129,7 +126,6 @@ namespace RecipeDB.EntityClasses
 			InitClassMembers();
 			// __LLBLGENPRO_USER_CODE_REGION_START InitClassEmpty
 			// __LLBLGENPRO_USER_CODE_REGION_END
-
 
 			OnInitialized();
 		}
@@ -180,9 +176,9 @@ namespace RecipeDB.EntityClasses
 			get { return _recipe; }
 			set { SetSingleRelatedEntityNavigator(value, "Recipe"); }
 		}
+
 		// __LLBLGENPRO_USER_CODE_REGION_START CustomEntityCode
 		// __LLBLGENPRO_USER_CODE_REGION_END
-
 
 	}
 }

@@ -396,4 +396,160 @@
     </MappingStore>
   </MappingStores>
   <ModelViews />
+  <DerivedModels>
+    <DerivedModel Name="RecipeDto" ObjectID="10c9f03a-5da6-4f67-8fe0-fb43982cfdb5" TargetFrameworkName="DTO Class Model" UseLegacyDefaults="false">
+      <CodeGenerationMetaDataDefaults>
+        <TargetElement Type="32768">
+          <Defaults>
+            <Attributes>
+              <Attribute Value="Serializable" />
+              <Attribute Value="DataContract" />
+            </Attributes>
+          </Defaults>
+        </TargetElement>
+        <TargetElement Type="65536">
+          <Defaults>
+            <Attributes>
+              <Attribute Value="Serializable" />
+              <Attribute Value="DataContract" />
+            </Attributes>
+          </Defaults>
+        </TargetElement>
+        <TargetElement Type="131072">
+          <Defaults>
+            <Attributes>
+              <Attribute Value="DataMember" />
+            </Attributes>
+          </Defaults>
+        </TargetElement>
+        <TargetElement Type="262144">
+          <Defaults>
+            <Attributes>
+              <Attribute Value="DataMember" />
+            </Attributes>
+          </Defaults>
+        </TargetElement>
+        <TargetElement Type="524288">
+          <Defaults>
+            <Attributes>
+              <Attribute Value="DataMember" />
+            </Attributes>
+          </Defaults>
+        </TargetElement>
+      </CodeGenerationMetaDataDefaults>
+      <Settings>
+        <Property Name="DerivedElementClassNameSuffix" Value="" />
+        <Property Name="PrefixDenormalizedFieldsWithNavigatorName" Value="true" />
+        <Property Name="SyncDerivedElementNamesWithSourceElementNames" Value="false" />
+      </Settings>
+      <CodeGenerationCyclePreferences OutputType="3">
+        <LastUsedPreferences>
+          <DestinationRootFolder Value=".\Code" />
+          <FrameworkName Value="DTO Class Model" />
+          <LanguageName Value="C#" />
+          <PlatformName Value=".NET 4.8.0" />
+          <PresetName Value="SD.DTOClasses.ReadOnlyDTOs" />
+          <RootNamespace Value="RecipeDto" />
+          <TemplateGroup Value="General" />
+          <TemplateBindings>
+            <Binding Name="SD.DTOClassModel" />
+            <Binding Name="SD.TemplateBindings.General" />
+          </TemplateBindings>
+          <AdhocTemplateSets />
+        </LastUsedPreferences>
+      </CodeGenerationCyclePreferences>
+      <Documents>
+        <Document Name="RecipeView">
+          <RootEntity Entity=":Recipe" />
+          <Fields>
+            <Field Name="Id">
+              <EntityField Name="Id" />
+            </Field>
+            <Field Name="ImagePath">
+              <EntityField Name="ImagePath" />
+            </Field>
+            <Field Name="IsActive">
+              <EntityField Name="IsActive" />
+            </Field>
+            <Field Name="RecipeCategories">
+              <Document Name="RecipeCategory">
+                <RootEntity Entity=":RecipeCategory" NavigatorPath="RecipeCategories" />
+                <Fields>
+                  <Field Name="Category">
+                    <Document Name="Category">
+                      <RootEntity Entity=":Category" NavigatorPath="RecipeCategories,Category" />
+                      <Fields>
+                        <Field Name="CategoryName">
+                          <EntityField Name="CategoryName" />
+                        </Field>
+                        <Field Name="Id">
+                          <EntityField Name="Id" />
+                        </Field>
+                        <Field Name="IsActive">
+                          <EntityField Name="IsActive" />
+                        </Field>
+                      </Fields>
+                    </Document>
+                  </Field>
+                  <Field Name="CategoryId">
+                    <EntityField Name="CategoryId" />
+                  </Field>
+                  <Field Name="Id">
+                    <EntityField Name="Id" />
+                  </Field>
+                  <Field Name="IsActive">
+                    <EntityField Name="IsActive" />
+                  </Field>
+                  <Field Name="RecipeId">
+                    <EntityField Name="RecipeId" />
+                  </Field>
+                </Fields>
+              </Document>
+            </Field>
+            <Field Name="RecipeIngredients">
+              <Document Name="RecipeIngredient">
+                <RootEntity Entity=":RecipeIngredient" NavigatorPath="RecipeIngredients" />
+                <Fields>
+                  <Field Name="Id">
+                    <EntityField Name="Id" />
+                  </Field>
+                  <Field Name="Ingredient">
+                    <EntityField Name="Ingredient" />
+                  </Field>
+                  <Field Name="IsActive">
+                    <EntityField Name="IsActive" />
+                  </Field>
+                  <Field Name="RecipeId">
+                    <EntityField Name="RecipeId" />
+                  </Field>
+                </Fields>
+              </Document>
+            </Field>
+            <Field Name="RecipeInstructions">
+              <Document Name="RecipeInstruction">
+                <RootEntity Entity=":RecipeInstruction" NavigatorPath="RecipeInstructions" />
+                <Fields>
+                  <Field Name="Id">
+                    <EntityField Name="Id" />
+                  </Field>
+                  <Field Name="Instruction">
+                    <EntityField Name="Instruction" />
+                  </Field>
+                  <Field Name="IsActive">
+                    <EntityField Name="IsActive" />
+                  </Field>
+                  <Field Name="RecipeId">
+                    <EntityField Name="RecipeId" />
+                  </Field>
+                </Fields>
+              </Document>
+            </Field>
+            <Field Name="Title">
+              <EntityField Name="Title" />
+            </Field>
+          </Fields>
+        </Document>
+      </Documents>
+    </DerivedModel>
+  </DerivedModels>
 </Project>

@@ -20,20 +20,18 @@ namespace RecipeDB.EntityClasses
 {
 	// __LLBLGENPRO_USER_CODE_REGION_START AdditionalNamespaces
 	// __LLBLGENPRO_USER_CODE_REGION_END
-
 	/// <summary>Entity class which represents the entity 'Recipe'.<br/><br/></summary>
 	[Serializable]
 	public partial class RecipeEntity : CommonEntityBase
 		// __LLBLGENPRO_USER_CODE_REGION_START AdditionalInterfaces
-		// __LLBLGENPRO_USER_CODE_REGION_END
-	
+		// __LLBLGENPRO_USER_CODE_REGION_END	
 	{
 		private EntityCollection<RecipeCategoryEntity> _recipeCategories;
 		private EntityCollection<RecipeIngredientEntity> _recipeIngredients;
 		private EntityCollection<RecipeInstructionEntity> _recipeInstructions;
+
 		// __LLBLGENPRO_USER_CODE_REGION_START PrivateMembers
 		// __LLBLGENPRO_USER_CODE_REGION_END
-
 		private static RecipeEntityStaticMetaData _staticMetaData = new RecipeEntityStaticMetaData();
 		private static RecipeRelations _relationsFactory = new RecipeRelations();
 
@@ -130,7 +128,6 @@ namespace RecipeDB.EntityClasses
 			PerformDependencyInjection();
 			// __LLBLGENPRO_USER_CODE_REGION_START InitClassMembers
 			// __LLBLGENPRO_USER_CODE_REGION_END
-
 			OnInitClassMembersComplete();
 		}
 
@@ -145,7 +142,6 @@ namespace RecipeDB.EntityClasses
 			InitClassMembers();
 			// __LLBLGENPRO_USER_CODE_REGION_START InitClassEmpty
 			// __LLBLGENPRO_USER_CODE_REGION_END
-
 
 			OnInitialized();
 		}
@@ -208,9 +204,9 @@ namespace RecipeDB.EntityClasses
 		/// <summary>Gets the EntityCollection with the related entities of type 'RecipeInstructionEntity' which are related to this entity via a relation of type '1:n'. If the EntityCollection hasn't been fetched yet, the collection returned will be empty.<br/><br/></summary>
 		[TypeContainedAttribute(typeof(RecipeInstructionEntity))]
 		public virtual EntityCollection<RecipeInstructionEntity> RecipeInstructions { get { return GetOrCreateEntityCollection<RecipeInstructionEntity, RecipeInstructionEntityFactory>("Recipe", true, false, ref _recipeInstructions); } }
+
 		// __LLBLGENPRO_USER_CODE_REGION_START CustomEntityCode
 		// __LLBLGENPRO_USER_CODE_REGION_END
-
 
 	}
 }

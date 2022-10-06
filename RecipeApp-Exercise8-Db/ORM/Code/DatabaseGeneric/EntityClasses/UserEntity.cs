@@ -20,17 +20,15 @@ namespace RecipeDB.EntityClasses
 {
 	// __LLBLGENPRO_USER_CODE_REGION_START AdditionalNamespaces
 	// __LLBLGENPRO_USER_CODE_REGION_END
-
 	/// <summary>Entity class which represents the entity 'User'.<br/><br/></summary>
 	[Serializable]
 	public partial class UserEntity : CommonEntityBase
 		// __LLBLGENPRO_USER_CODE_REGION_START AdditionalInterfaces
-		// __LLBLGENPRO_USER_CODE_REGION_END
-	
+		// __LLBLGENPRO_USER_CODE_REGION_END	
 	{
+
 		// __LLBLGENPRO_USER_CODE_REGION_START PrivateMembers
 		// __LLBLGENPRO_USER_CODE_REGION_END
-
 		private static UserEntityStaticMetaData _staticMetaData = new UserEntityStaticMetaData();
 		private static UserRelations _relationsFactory = new UserRelations();
 
@@ -106,7 +104,6 @@ namespace RecipeDB.EntityClasses
 			PerformDependencyInjection();
 			// __LLBLGENPRO_USER_CODE_REGION_START InitClassMembers
 			// __LLBLGENPRO_USER_CODE_REGION_END
-
 			OnInitClassMembersComplete();
 		}
 
@@ -121,7 +118,6 @@ namespace RecipeDB.EntityClasses
 			InitClassMembers();
 			// __LLBLGENPRO_USER_CODE_REGION_START InitClassEmpty
 			// __LLBLGENPRO_USER_CODE_REGION_END
-
 
 			OnInitialized();
 		}
@@ -192,9 +188,9 @@ namespace RecipeDB.EntityClasses
 			get { return (System.String)GetValue((int)UserFieldIndex.Username, true); }
 			set	{ SetValue((int)UserFieldIndex.Username, value); }
 		}
+
 		// __LLBLGENPRO_USER_CODE_REGION_START CustomEntityCode
 		// __LLBLGENPRO_USER_CODE_REGION_END
-
 
 	}
 }

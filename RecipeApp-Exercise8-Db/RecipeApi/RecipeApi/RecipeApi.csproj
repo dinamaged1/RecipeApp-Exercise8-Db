@@ -8,7 +8,9 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.9" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.6" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="Npgsql" Version="6.0.7" />
 		<PackageReference Include="SD.LLBLGen.Pro.DQE.PostgreSql" Version="5.9.2" />
 		<PackageReference Include="Swashbuckle" Version="5.6.0" />
@@ -29,6 +31,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\ORM\Code\DatabaseSpecific\RecipeDBDBSpecific.csproj" />
 		<ProjectReference Include="..\..\ORM\Code\DatabaseGeneric\RecipeDB.csproj" />
+		<ProjectReference Include="..\..\ORM\Code\RecipeDto\RecipeDto.csproj" />
+		<ProjectReference Include="..\..\ORM\Code\RecipeDto.Persistence\RecipeDto.Persistence.csproj" />
 	</ItemGroup>
 
 </Project>
