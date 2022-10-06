@@ -296,7 +296,7 @@ app.MapGet("/recipes", async () =>
 }).WithName("GetRecipes");
 
 //Get specific  recipe
-app.MapGet("/recipe/{id}", async (string id) =>
+app.MapGet("/recipe/{id}",(string id) =>
 {
     using (var adapter = new DataAccessAdapter(connectionString))
     {
@@ -323,11 +323,84 @@ app.MapGet("/recipe/{id}", async (string id) =>
 });
 
 //Add new recipe
-app.MapPost("/recipe", [Authorize] async ([FromBody] Recipe newRecipe) =>
+app.MapPost("/recipe", async ([FromBody] Recipe newRecipe) =>
 {
-    recipesList.Add(newRecipe);
-    //await SaveRecipeToJson();
-    return Results.Ok(recipesList);
+    using (var adapter = new DataAccessAdapter(connectionString))
+    {
+        var metaData = new LinqMetaData(adapter);
+        var categoryList = await metaData.Category.Where(x => x.IsActive == true).OrderBy(x => x.CategoryName).ToListAsync();
+
+        RecipeEntity recipeEntity = new RecipeEntity()
+        {
+            Id = newRecipe.Id,
+            Title = newRecipe.Title,
+            ImagePath = newRecipe.Imagepath,
+            IsActive = true
+        };
+
+        var recipeIngredients = new EntityCollection<RecipeIngredientEntity>();
+        var recipeInstructions = new EntityCollection<RecipeInstructionEntity>();
+        var recipeCategories = new EntityCollection<RecipeCategoryEntity>();
+
+        RecipeIngredientEntity recipeIngredientEntity = new RecipeIngredientEntity();
+        RecipeInstructionEntity recipeInstructionEntity = new RecipeInstructionEntity();
+        RecipeCategoryEntity recipeCategoryEntity = new RecipeCategoryEntity();
+
+        foreach(var ingredient in newRecipe.Ingredients)
+        {
+            recipeIngredientEntity = new RecipeIngredientEntity()
+            {
+                Id = Guid.NewGuid().ToString(),
+                RecipeId = newRecipe.Id,
+                Ingredient = ingredient,
+                IsActive = true,
+            };
+            recipeIngredients.Add(recipeIngredientEntity);
+        }
+
+        foreach (var instruction in newRecipe.Instructions)
+        {
+            recipeInstructionEntity = new RecipeInstructionEntity()
+            {
+                Id = Guid.NewGuid().ToString(),
+                RecipeId = newRecipe.Id,
+                Instruction = instruction,
+                IsActive = true,
+            };
+            recipeInstructions.Add(recipeInstructionEntity);
+        }
+
+        foreach (var category in newRecipe.Categories)
+        {
+            recipeCategoryEntity = new RecipeCategoryEntity()
+            {
+                Id = Guid.NewGuid().ToString(),
+                RecipeId = newRecipe.Id,
+                CategoryId = categoryList.FirstOrDefault(x => x.CategoryName == category)?.Id,
+                IsActive = true,
+            };
+            recipeCategories.Add(recipeCategoryEntity);
+        }
+
+        await adapter.SaveEntityAsync(recipeEntity);
+
+        await adapter.SaveEntityCollectionAsync(recipeIngredients);
+        await adapter.SaveEntityCollectionAsync(recipeInstructions);
+        await adapter.SaveEntityCollectionAsync(recipeCategories);
+
+        var recipes = await metaData.Recipe.Where(p => p.IsActive).ProjectToRecipeView().ToListAsync();
+        List<Recipe> recipesList = recipes.Select(x => new Recipe
+        {
+            Id = x.Id,
+            Title = x.Title,
+            Imagepath = x.ImagePath,
+            Ingredients = x.RecipeIngredients.Where(y => y.IsActive).Select(y => y.Ingredient).ToList(),
+            Instructions = x.RecipeInstructions.Where(y => y.IsActive).Select(y => y.Instruction).ToList(),
+            Categories = x.RecipeCategories.Where(y => y.IsActive).Select(y => y.Category.CategoryName).ToList()
+        }).ToList();
+
+        return Results.Ok(recipesList);
+    }
 });
 
 //Edit recipe
